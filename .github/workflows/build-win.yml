@@ -18,15 +18,37 @@ jobs:
         with:
           node-version: 22
 
+      - name: Show environment
+        run: |
+          node -v
+          npm -v
+
       - name: Install dependencies
-        run: npm install
+        run: npm install --verbose
 
-      - name: Build Windows installer
-        run: npm run dist:win
+      - name: Build Vite app
+        run: npm run build
 
-      - name: Upload release artifacts
+      - name: Show dist files
+        run: |
+          if (Test-Path dist) { Get-ChildItem -Recurse dist }
+          else { Write-Host "dist folder not found" }
+
+      - name: Package Electron app
+        run: npx electron-builder --win nsis --publish never
+
+      - name: Show release files
+        if: always()
+        run: |
+          if (Test-Path release) { Get-ChildItem -Recurse release }
+          else { Write-Host "release folder not found" }
+
+      - name: Upload build artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: hotstrip-windows-build
-          path: release/**
-          if-no-files-found: error
+          path: |
+            dist/**
+            release/**
+          if-no-files-found: warn
